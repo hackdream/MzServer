@@ -4,9 +4,9 @@ using namespace std;
 
 ConnectInfo::ConnectInfo(void)
 {
-	strcpy(ipAddress, "127.0.0.1");
+	strcpy(ipAddress, "127.000.000.001");
 	port = 8000;	
-	strcpy(note, "student");	
+	strcpy(note, "12345678901234567890123456789012345678901234567890");
 }
 
 
