@@ -71,10 +71,8 @@ BOOL CProcessEnumerator::InitializeWinNT(){
 BOOL CProcessEnumerator::EnumWinNTProcs(char *ProcsInfo){
 	LPDWORD lpdwPIDs;
 	DWORD dwSize, dwSize2, dwIndex, lenInfo=0;
-	HMODULE hMod;
 	HANDLE hProcess;
 	char szFilePath[MAX_PATH];
-	ENUMINFOSTRUCT sInfo;
 	dwSize2 = 256 * sizeof(DWORD);
 	lpdwPIDs = NULL;
 	do{
@@ -228,7 +226,6 @@ DWORD WINAPI ReadConsoleThread(LPVOID lparam){
 	unsigned long BytesRead = 0;
 	int bufsize = 1000;
 	char *pReadBuffer = new char[1024];
-	DWORD TotalBytesAvail;
 	while (!PEnd){
 		Sleep(100);
 		//while (1){}

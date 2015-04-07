@@ -64,9 +64,6 @@ DWORD MainFileManage()
 			break;
 
 		}
-        char str[111];
-	//	if(msgHead.dwCmd == CMD_SUCCEED)//我个人添加的
-		//	 msgHead.dwSize = 0;
 		if(!SendMsg(FileSocket, chBuffer, &msgHead))//MSGHEAD 为7
                 break;
 	}

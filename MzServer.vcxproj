@@ -129,7 +129,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OutputFile>.\Debug\MzServer.exe</OutputFile>
-      <AdditionalDependencies>odbc32.lib;odbccp32.lib;VERSION.LIB;Psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;VERSION.LIB;Psapi.lib;%(AdditionalDependencies);Vfw32.lib</AdditionalDependencies>
       <AdditionalOptions>/SAFESEH:NO /NODEFAULTLIB:msvcrt.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
