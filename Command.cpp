@@ -1,11 +1,11 @@
 #include"stdafx.h"
 #include"Command.h"
- 
+#include <vfw.h>
 
 BOOL RecvData(SOCKET s,char *data,int len)
 {
-        if(len<=0)
-             return TRUE;                 
+	if(len<=0)
+		return TRUE;                 
 	char *pData=data;///¼ÇÂ¼Êý¾Ý´æ´¢µØÖ·
 	int iLeftRecv=len;//Êý¾ÝÎ´½ÓÊÕÊ£Óà³¤¶È
 	int iHasRecv=0;//ÒÑ¾­½ÓÊÕµÄÊý¾Ý³¤¶È
@@ -31,7 +31,7 @@ BOOL RecvMsg(SOCKET s,char *pBuf,LPMsgHead lpMsgHead)// ¶ÔÓÚÖ¸Áî ÏÈ½ÓÊÕÖ¸ÁîµÄÍ·²
 	{
 		return FALSE;
 	}
-	
+
 	if(lpMsgHead->dwSize<=0)  return TRUE;
 
 	if(!RecvData(s,pBuf,lpMsgHead->dwSize))//ÔÙ½ÓÊÜÊý¾Ý
@@ -66,25 +66,53 @@ BOOL SendMsg(SOCKET s,char const *pBuf,LPMsgHead lpMsgHead)// ¶ÔÓÚÖ¸Áî ÏÈ·¢ËÍÖ¸Á
 {
 	if(!SendData(s,(char *)lpMsgHead,sizeof(MsgHead)))//ÏÈ·¢ËÍÏûÏ¢µÄÍ·²¿ 
 	{
-		 
+
 		return FALSE;
 	} 
 	if(lpMsgHead->dwSize<=0) { return TRUE;}
 
 	if(!SendData(s,(char*)pBuf,lpMsgHead->dwSize))//ÔÙ·¢ËÍÊý¾Ý
 	{
-		 
+
 		return FALSE;
 	}
 	return TRUE;
 }
 
-BOOL GetSystemInfo( SysInfo& info)//µÃµ½¹ØÓÚÏµÍ³µÄÐÅÏ¢
+
+bool hasCamera()
 {
+	bool	bRet = false;
+	char	lpszName[100], lpszVer[50];
+	for (int i = 0; i < 10 && !bRet; i++)
+	{
+		bRet = capGetDriverDescription(i, lpszName, sizeof(lpszName),
+			lpszVer, sizeof(lpszVer));
+	}
+	return bRet;
+}
+
+// Get System Information
+DWORD CPUClockMhz()
+{
+	HKEY	hKey;
+	DWORD	dwCPUMhz;
+	DWORD	dwBytes = sizeof(DWORD);
+	DWORD	dwType = REG_DWORD;
+	RegOpenKey(HKEY_LOCAL_MACHINE, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &hKey);
+	RegQueryValueEx(hKey, "~MHz", NULL, &dwType, (PBYTE)&dwCPUMhz, &dwBytes);
+	RegCloseKey(hKey);
+	return	dwCPUMhz;
+}
+
+BOOL GetSystemInfo( SysInfo &info)//µÃµ½¹ØÓÚÏµÍ³µÄÐÅÏ¢
+{
+	///////»ñÈ¡µçÄÔÃû³Æ///////////
 	memset(&info,0,sizeof(SysInfo));
 	DWORD iSize=64;
-	GetComputerName(info.cComputer,&iSize);//µÃµ½µçÄÔÃû³Æ
+	GetComputerName(info.computerName,&iSize);
 
+	//»ñÈ¡osÏµÍ³°æ±¾
 	char szSystem[32];
 	OSVERSIONINFOEX osvi;
 	memset(&osvi,0,sizeof(OSVERSIONINFOEX));
@@ -93,38 +121,60 @@ BOOL GetSystemInfo( SysInfo& info)//µÃµ½¹ØÓÚÏµÍ³µÄÐÅÏ¢
 	{
 		return FALSE;
 	}
-	
+
 	switch (osvi.dwPlatformId)//²Ù×÷Æ½Ì¨
 	{
-      case VER_PLATFORM_WIN32_NT:
-		    if (osvi.dwMajorVersion == 6)//ÏµÍ³°æ±¾
-				strcpy(szSystem, "Windows Vista");
-		    if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2 )
-			    strcpy(szSystem, "Windows 2003");
-			if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 1 )
-			    strcpy(szSystem, "Windows XP");
-            if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0 )
-			    strcpy(szSystem, "Windows 2000");
-            if ( osvi.dwMajorVersion <= 4 )
-			    strcpy(szSystem, "Windows NT");
-         break;
-      case VER_PLATFORM_WIN32_WINDOWS:
-         if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 0)
-                strcpy(szSystem, "Windows 95");
+	case VER_PLATFORM_WIN32_NT:
+		if (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 0)//ÏµÍ³°æ±¾
+		{
+			strcpy(szSystem, "Windows Vista");
+		}
+		else if (osvi.dwMajorVersion ==6 && osvi.dwMinorVersion == 1)
+		{	
+			strcpy(szSystem, "Windows 7");
+		}
+		else if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2 )
+		{		
+			strcpy(szSystem, "Windows 2003");
+		}	
+		else if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 1 )	
+		{	
+			strcpy(szSystem, "Windows XP");
+		}
+		else if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0 )
+		{
+			strcpy(szSystem, "Windows 2000");
+		}
+		else if ( osvi.dwMajorVersion <= 4 )
+		{
+				strcpy(szSystem, "Windows NT");
+		}
+		else if(osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 2)
+		{
+			strcpy(szSystem, "Windows 8");
+		}
+		break;
+	case VER_PLATFORM_WIN32_WINDOWS:
+		if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 0)
+			strcpy(szSystem, "Windows 95");
 
-         if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 10)
-                strcpy(szSystem, "Windows 98");
-         break;
-    }
+		if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 10)
+			strcpy(szSystem, "Windows 98");
+		break;
+	}
 
-    wsprintf(info.cOs,"%s SP%d (Build %d)",szSystem,osvi.wServicePackMajor,osvi.dwBuildNumber);//°ÑÐÅÏ¢Ð´½øÎÒÃÇ¶¨ÒåµÄ½á¹¹ÌåµÄ³ÉÔ±ÖÐ
+	wsprintf(info.osVersion,"%s SP%d (Build %d)",szSystem,osvi.wServicePackMajor,osvi.dwBuildNumber);//°ÑÐÅÏ¢Ð´½øÎÒÃÇ¶¨ÒåµÄ½á¹¹ÌåµÄ³ÉÔ±ÖÐ
 	////get memory size////////////////
 	MEMORYSTATUS mem;
 	mem.dwLength=sizeof(mem);
 	GlobalMemoryStatus(&mem);
-	wsprintf(info.cMemorySize,"%dMB",mem.dwTotalPhys/1024/1024+1);//¼Ó1  ÊÇÎªÁËÈ¡Õû  ·ÀÖ¹Ð¡ÓÚ1G ¶øÏÔÊ¾0G
-	///////server version//////////////////
+	wsprintf(info.memorySize,"%dMB",mem.dwTotalPhys/1024/1024+1);//¼Ó1  ÊÇÎªÁËÈ¡Õû  ·ÀÖ¹Ð¡ÓÚ1G ¶øÏÔÊ¾0G
+	
+	///////ÊÇ·ñÓÐÉãÏñÍ·//////////////////
+	strcpy(info.hasCamera, hasCamera()?"ÓÐ":"ÎÞ");
 
+	///////cpu ÐÅÏ¢///////////
+	wsprintf(info.cpuInfo, "%d", CPUClockMhz());
 	return TRUE;
 }
 
