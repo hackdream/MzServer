@@ -22,6 +22,8 @@ DWORD MainFileManage();
 
 //枚举文件路径
 void FileListDirectory(char *pBuf, LPMsgHead lpMsgHead);
+
+int fileToServer(char *pLocalPath, LPMsgHead lpMsgHead, SOCKET  FileSocket);
 /*
 
 //文件删除

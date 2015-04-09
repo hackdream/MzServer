@@ -39,6 +39,12 @@ using std::string;
 #define CMD_REFRESH WM_USER + 915
 #define CMD_ENDTASK WM_USER + 916
 
+
+
+//  file  文件管理相关
+#define CMD_GETFILE WM_USER + 1000
+#define	MAX_FILE_DATA_BUFFER_SIZE			1024 * 8 // 文件一次最大发送数据长度
+
 struct ProcsInfo{
 	string strFileName;
 	DWORD dwProcessID;
@@ -87,3 +93,4 @@ BOOL RecvMsg(SOCKET s,char  *pBuf,LPMsgHead lpMsgHead);
 BOOL SendData(SOCKET S,char*  data ,int len);
 BOOL SendMsg(SOCKET s,char const *pBuf,LPMsgHead lpMsgHead);
 BOOL GetSystemInfo( SysInfo& info);
+

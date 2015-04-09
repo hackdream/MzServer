@@ -1,8 +1,10 @@
+#include <afx.h>
 #include "StdAfx.h"
 #include "FileOperator.h"
 #include <stdio.h>
 #include <shellapi.h>
 #include "ConnectInfo.h"
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  发送硬盘信息
@@ -35,15 +37,14 @@ DWORD MainFileManage()
 	msgHead.dwSize = 0;
 	if(!SendMsg(FileSocket, chBuffer, &msgHead))
 	{
- 
 		if(chBuffer != NULL)
 			delete []chBuffer;
 		
 		closesocket(FileSocket);
 		return 0;//send socket type error
 	}
-
-	while(1)
+	bool flag = true;
+	while(flag)
 	{
 		//接收命令
         if(!RecvMsg(FileSocket, chBuffer, &msgHead))
@@ -55,10 +56,23 @@ DWORD MainFileManage()
 		case CMD_FILEDRIVER://获取驱动器
 			{
                     FileListDirver(chBuffer, &msgHead);
+					if(!SendMsg(FileSocket, chBuffer, &msgHead))//MSGHEAD 为7
+					{
+							flag = false;
+					}
 			}
 			break;
 		case CMD_FILEDIRECTORY://列出某个盘所拥有的文件
-			FileListDirectory(chBuffer, &msgHead);
+			{
+				FileListDirectory(chBuffer, &msgHead);
+				if(!SendMsg(FileSocket, chBuffer, &msgHead))//MSGHEAD 为7
+				{
+					flag = false;
+				}
+			}
+			break;
+		case CMD_GETFILE://下载某个文件
+		    fileToServer(chBuffer, &msgHead, FileSocket);
 			break;
 		default:
 			{
@@ -67,8 +81,7 @@ DWORD MainFileManage()
 			break;
 
 		}
-		if(!SendMsg(FileSocket, chBuffer, &msgHead))//MSGHEAD 为7
-                break;
+		memset(chBuffer, 0, 1536 * 1024);
 	}
      if(chBuffer != NULL)
 		 delete[] chBuffer;
@@ -214,6 +227,33 @@ void FileListDirectory(char *pBuf, LPMsgHead lpMsgHead)
 	lpMsgHead->dwCmd  = CMD_SUCCEED;
 	lpMsgHead->dwSize = dwLen;
 }
+
+
+int fileToServer(char *pLocalPath, LPMsgHead lpMsgHead, SOCKET  FileSocket){
+    CFile file;
+	CFileException fileException;
+	try
+	{
+		file.Open(pLocalPath, CFile::modeReadWrite, &fileException);
+	}
+	catch (CFileException* e)
+	{
+		file.Close();
+	}	
+	if(file == INVALID_HANDLE_VALUE) return 0;
+	char* pFileData = new char[MAX_FILE_DATA_BUFFER_SIZE + 10];
+	while(true){
+		int readSize = file.Read(pFileData, MAX_FILE_DATA_BUFFER_SIZE);
+		lpMsgHead->dwSize = readSize;
+		SendMsg(FileSocket, pFileData, lpMsgHead);
+		if(readSize < MAX_FILE_DATA_BUFFER_SIZE) break;
+	}
+	delete pFileData;
+	file.Close();
+	return 0;
+}
+
+
 /*
  
 void FileDelete(char *pBuf, LPMsgHead lpMsgHead)
