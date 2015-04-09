@@ -19,10 +19,10 @@ void FileListDirver(char *pBuf, LPMsgHead lpMsgHead);
 DWORD MainFileManage();
 
  
-/*
+
 //枚举文件路径
 void FileListDirectory(char *pBuf, LPMsgHead lpMsgHead);
-
+/*
 
 //文件删除
 void FileDelete(char *pBuf, LPMsgHead lpMsgHead);

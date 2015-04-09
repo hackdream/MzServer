@@ -154,12 +154,13 @@ DWORD WINAPI WriteConsoleThread(LPVOID lparam)
 		if(!RecvMsg(MainSocket, pWriteBuffer, &msg))
 		{
 			Clear();
+			delete pWriteBuffer;
 			return 0;
 		}
 		if(msg.dwCmd == 88)
 		{
 			Clear();
-			if(pWriteBuffer != NULL) delete pWriteBuffer;
+		    delete pWriteBuffer;
 			TerminateProcess(hProcess, 1);	
 			return 0;
 		}
@@ -192,6 +193,8 @@ DWORD WINAPI ReadConsoleThread(LPVOID lparam)
 			if(!SendMsg(MainSocket, pReadBuffer, &msg))
 			{
 				Clear();
+				delete pReadBuffer;
+				return 0;
 			} 
 		}
 	}

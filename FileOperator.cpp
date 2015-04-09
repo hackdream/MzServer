@@ -57,6 +57,9 @@ DWORD MainFileManage()
                     FileListDirver(chBuffer, &msgHead);
 			}
 			break;
+		case CMD_FILEDIRECTORY://列出某个盘所拥有的文件
+			FileListDirectory(chBuffer, &msgHead);
+			break;
 		default:
 			{
                
@@ -131,7 +134,7 @@ void FileListDirver(char *pBuf, LPMsgHead lpMsgHead)
 }
  
 
- /*
+ 
 //枚举文件路径
 void FileListDirectory(char *pBuf, LPMsgHead lpMsgHead)
 {
@@ -211,7 +214,7 @@ void FileListDirectory(char *pBuf, LPMsgHead lpMsgHead)
 	lpMsgHead->dwCmd  = CMD_SUCCEED;
 	lpMsgHead->dwSize = dwLen;
 }
-
+/*
  
 void FileDelete(char *pBuf, LPMsgHead lpMsgHead)
 {
