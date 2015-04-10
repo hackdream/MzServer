@@ -17,7 +17,7 @@ using std::string;
 #define CMD_GETFIRST_SCREEN WM_USER + 890 //请求屏幕第一帧
 #define CMD_SCREEN_TO_SHOW WM_USER + 891 //显示获得的屏幕信息
 #define CMD_CHANGE_SCREEN_BITS WM_USER + 892 //改变位图像素位数
-
+#define CMD_FAILED WM_USER + 9 //响应失败
 
 // 屏幕模拟击键
 #define CMD_CTRLALTDEL   WM_USER + 893 // Ctrl + Alt + del
@@ -44,6 +44,7 @@ using std::string;
 //  file  文件管理相关
 #define CMD_GETFILE WM_USER + 1000
 #define	MAX_FILE_DATA_BUFFER_SIZE			1024 * 8 // 文件一次最大发送数据长度
+#define CMD_FILE_DELETE WM_USER + 1001
 
 struct ProcsInfo{
 	string strFileName;
