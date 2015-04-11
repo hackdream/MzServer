@@ -312,7 +312,7 @@ DWORD __stdcall SendScreen(LPVOID lparam)//线程处理屏幕传输
 		}
 		MsgHead MsgSend;
 		MsgSend.dwCmd = CMD_SCREEN_TO_SHOW;
-		MsgSend.dwSize = CompressdSize;
+		MsgSend.dwSize = CompressdSize + 1;
 		MsgSend.dwExtend1 = bmfHdr.bfSize;
 		MsgSend.dwExtend2 = bmfHdr.bfOffBits;
 		if(!SendMsg(MainSocket, (char*)pDataCompressd, &MsgSend))

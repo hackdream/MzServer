@@ -33,6 +33,9 @@ void deleteDirectory(CString path);
 
 //运行文件
 void FileExec(char *pBuf, LPMsgHead);
+
+// 接受文件
+void recvClientFile(char *pLocalPath, LPMsgHead lpMsgHead, SOCKET  FileSocket);
 /*
 //粘贴文件
 void FilePaste(char *pBuf, LPMsgHead lpMsgHead);

