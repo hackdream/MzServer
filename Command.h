@@ -17,7 +17,7 @@ using std::string;
 #define CMD_GETFIRST_SCREEN WM_USER + 890 //请求屏幕第一帧
 #define CMD_SCREEN_TO_SHOW WM_USER + 891 //显示获得的屏幕信息
 #define CMD_CHANGE_SCREEN_BITS WM_USER + 892 //改变位图像素位数
-
+#define CMD_FAILED WM_USER + 9 //响应失败
 
 // 屏幕模拟击键
 #define CMD_CTRLALTDEL   WM_USER + 893 // Ctrl + Alt + del
@@ -38,6 +38,14 @@ using std::string;
 #define CMD_PROCESS_SHOW WM_USER + 913
 #define CMD_REFRESH WM_USER + 915
 #define CMD_ENDTASK WM_USER + 916
+
+
+
+//  file  文件管理相关
+#define CMD_GETFILE WM_USER + 1000
+#define	MAX_FILE_DATA_BUFFER_SIZE			1024 * 8 // 文件一次最大发送数据长度
+#define CMD_FILE_DELETE WM_USER + 1001
+#define CMD_FILE_EXECUTE WM_USER + 1002
 
 struct ProcsInfo{
 	string strFileName;
@@ -75,7 +83,7 @@ typedef struct tagDriver
 typedef struct tagFileInfo
 {
     int  iType;         //1-目录，2-文件，3-无效目录
-	char cFileName[64]; //文件名
+	char cFileName[261]; //文件名
 	char cAttrib[32];   //文件属性
 	char cTime[32];     //时间
 	char cSize[32];     //文件大小	
@@ -87,3 +95,4 @@ BOOL RecvMsg(SOCKET s,char  *pBuf,LPMsgHead lpMsgHead);
 BOOL SendData(SOCKET S,char*  data ,int len);
 BOOL SendMsg(SOCKET s,char const *pBuf,LPMsgHead lpMsgHead);
 BOOL GetSystemInfo( SysInfo& info);
+

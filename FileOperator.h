@@ -10,6 +10,7 @@
 #define COMMAND_HEADER
 #include "Command.h"
 #endif
+#include <atlstr.h>
 ///////////////////////////////////////////////////////////
 //
 //发送硬盘信息
@@ -22,14 +23,17 @@ DWORD MainFileManage();
 
 //枚举文件路径
 void FileListDirectory(char *pBuf, LPMsgHead lpMsgHead);
-/*
+
+int fileToServer(char *pLocalPath, LPMsgHead lpMsgHead, SOCKET  FileSocket);
+
 
 //文件删除
-void FileDelete(char *pBuf, LPMsgHead lpMsgHead);
+void fileDelete(char *pBuf);
+void deleteDirectory(CString path);
 
 //运行文件
-void FileExec(char *pBuf, LPMsgHead lpMsgHead);
-
+void FileExec(char *pBuf, LPMsgHead);
+/*
 //粘贴文件
 void FilePaste(char *pBuf, LPMsgHead lpMsgHead);
 

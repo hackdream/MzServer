@@ -129,8 +129,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OutputFile>.\Debug\MzServer.exe</OutputFile>
-      <AdditionalDependencies>odbc32.lib;odbccp32.lib;VERSION.LIB;Psapi.lib;%(AdditionalDependencies);Vfw32.lib</AdditionalDependencies>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;VERSION.LIB;Psapi.lib;%(AdditionalDependencies);Vfw32.lib; Nafxcwd.lib;LIBCMTD.lib</AdditionalDependencies>
       <AdditionalOptions>/SAFESEH:NO /NODEFAULTLIB:msvcrt.lib %(AdditionalOptions)</AdditionalOptions>
+      <IgnoreSpecificDefaultLibraries>Nafxcwd.lib;Libcmtd.lib</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
