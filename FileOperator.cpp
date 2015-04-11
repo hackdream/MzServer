@@ -300,7 +300,7 @@ void deleteDirectory(CString directoryPath)   //删除一个文件夹下的所有内容
 void FileExec(char *pBuf, LPMsgHead lpMsgHead)
 {
 	//隐藏执行
-	if(lpMsgHead->dwExtend1 < 0){
+	if(lpMsgHead->dwExtend1 != 0){
 		HINSTANCE hInst = ::ShellExecute(NULL, "open",pBuf, NULL,NULL, SW_HIDE);
 	}
 	else {
