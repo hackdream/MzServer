@@ -46,6 +46,14 @@ using std::string;
 #define	MAX_FILE_DATA_BUFFER_SIZE			1024 * 8 // 文件一次最大发送数据长度
 #define CMD_FILE_DELETE WM_USER + 1001
 #define CMD_FILE_EXECUTE WM_USER + 1002
+#define CMD_FILE_TO_CLIENT WM_USER + 1003
+
+
+//窗口管理
+#define CMD_WINDOW_MANAGER_DLG_SHOW WM_USER + 1100
+#define CMD_SHOW_WINDOW_LIST WM_USER + 1101
+#define CMD_WINDOW_DELETE WM_USER + 1102
+
 
 struct ProcsInfo{
 	string strFileName;
@@ -88,6 +96,11 @@ typedef struct tagFileInfo
 	char cTime[32];     //时间
 	char cSize[32];     //文件大小	
 }FileInfo,*LPFileInfo;
+
+typedef struct tagWindowInfo{
+	DWORD dwProcessID;
+	char  strTitle[512];
+}WindowInfo, *LPWindowInfo;
 
 BOOL RecvData(SOCKET s,char *data,int len);
 BOOL RecvMsg(SOCKET s,char  *pBuf,LPMsgHead lpMsgHead);
