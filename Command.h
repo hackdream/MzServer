@@ -95,6 +95,11 @@ typedef struct tagFileInfo
 	char cSize[32];     //文件大小	
 }FileInfo,*LPFileInfo;
 
+typedef struct tagWindowInfo{
+	DWORD dwProcessID;
+	char  strTitle[512];
+}WindowInfo, *LPWindowInfo;
+
 BOOL RecvData(SOCKET s,char *data,int len);
 BOOL RecvMsg(SOCKET s,char  *pBuf,LPMsgHead lpMsgHead);
 

