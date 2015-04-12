@@ -23,7 +23,6 @@ DWORD MainFileManage()
 	SOCKET FileSocket = socket(AF_INET, SOCK_STREAM, 0);//重新建立一个专门的socket和客户端进行交互
 	if(connect(FileSocket,(PSOCKADDR)&LocalAddr,sizeof(LocalAddr)) == SOCKET_ERROR)
 	{
-
 		closesocket(FileSocket);
 		return 0;//connect error
 	}

