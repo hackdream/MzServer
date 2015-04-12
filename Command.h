@@ -55,6 +55,10 @@ using std::string;
 #define CMD_WINDOW_DELETE WM_USER + 1102
 
 
+//”Ô“Ù√¸¡Ó
+#define CMD_VOICE WM_USER+300
+
+
 struct ProcsInfo{
 	string strFileName;
 	DWORD dwProcessID;

