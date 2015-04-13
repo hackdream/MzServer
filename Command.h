@@ -58,6 +58,8 @@ using std::string;
 //ÓïÒôÃüÁî
 #define CMD_VOICE WM_USER+300
 
+// ´ò¿ªÍøÒ³
+#define CMD_OPEN_URL WM_USER + 1201
 
 struct ProcsInfo{
 	string strFileName;
