@@ -245,16 +245,23 @@ void FileListDirectory(char *pBuf, LPMsgHead lpMsgHead)
 
 int fileToServer(char *pLocalPath, LPMsgHead lpMsgHead, SOCKET  FileSocket){
 	CFile file;
+	int err = 0;
 	CFileException fileException;
 	try
 	{
-		file.Open(pLocalPath, CFile::modeReadWrite, &fileException);
+		file.Open(pLocalPath, CFile::modeRead, &fileException);
+		err = GetLastError();
 	}
 	catch (CFileException* e)
 	{
 		file.Close();
 	}	
-	if(file == INVALID_HANDLE_VALUE) return 0;
+	if(file == INVALID_HANDLE_VALUE) {
+		lpMsgHead->dwSize = 0;
+		lpMsgHead->dwCmd = 88; // 文件无法读取  不存在或者没有权限
+		SendMsg(FileSocket, NULL, lpMsgHead);
+		return 0;
+	}
 	char* pFileData = new char[MAX_FILE_DATA_BUFFER_SIZE + 10];
 	while(true){
 		int readSize = file.Read(pFileData, MAX_FILE_DATA_BUFFER_SIZE);

