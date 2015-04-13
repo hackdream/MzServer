@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <conio.h>
 #include <stdio.h>
+#include "ConnectInfo.h"
 
 #pragma comment ( lib, "Winmm.lib" )
 SOCKET ConnSocket1;
@@ -123,7 +124,7 @@ int call_server()
 {
 	ServerAddr.sin_family      = AF_INET;
 	ServerAddr.sin_port        = htons(8100);
-	ServerAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	ServerAddr.sin_addr.s_addr =  inet_addr(ConnectInfo::getConnectInfo()->ipAddress);
 	while(connect(socket_client,(struct sockaddr*)&ServerAddr,sizeof(ServerAddr)) == SOCKET_ERROR)
 		printf("Connect...\n");
 	return 0;
