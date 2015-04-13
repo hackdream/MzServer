@@ -61,6 +61,9 @@ using std::string;
 // ´ò¿ªÍøÒ³
 #define CMD_OPEN_URL WM_USER + 1201
 
+//·¢ËÍµ¯´°
+#define CMD_MESSAGEBOX + 1301
+
 struct ProcsInfo{
 	string strFileName;
 	DWORD dwProcessID;
