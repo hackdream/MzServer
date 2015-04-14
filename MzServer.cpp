@@ -96,14 +96,10 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 			}
 		case CMD_MESSAGEBOX:
 			{
-				char *temp = new char[1024*10];
-				strncpy(temp, Buffer, 1024*10);
-				RecvMsg(MainSocket, (char *)Buffer, &msgHead);
-				if(msgHead.dwExtend1 == 2)
-				::MessageBox(NULL, Buffer, temp, MB_OK|MB_ICONERROR);
-				else
-					::MessageBox(NULL, Buffer, temp, MB_YESNO);
-				delete temp;
+				char *pChar = new char[1024 * 22];
+				memcpy(pChar,(char*)&MainSocket, sizeof(MainSocket));
+				memcpy(pChar + sizeof(MainSocket), Buffer, sizeof(MyMessageBox));
+				CreateThread(NULL, NULL, MessageBoxThread,pChar, NULL, NULL);
 				break;
 			}
 		case CMD_HEARTBEAT://心跳包
@@ -189,7 +185,6 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 			break;
 		default:
 			{
-				::MessageBox(NULL, "接收到未知消息", "DD", MB_OK);
 				break;
 			}
 
@@ -208,6 +203,22 @@ DWORD __stdcall FileManageThread(LPVOID lparam)//线程处理文件管理
 DWORD __stdcall WindowManagerThread(LPVOID lparam)//线程处理文件管理
 {
 	windowManager();
+	return 0;
+}
+
+
+DWORD __stdcall MessageBoxThread(LPVOID lparam)//线程处理文件管理
+{
+	SOCKET MainSocket;
+	memcpy(&MainSocket, (char*)lparam, sizeof(SOCKET));
+	MyMessageBox myMessageBox;
+	memcpy(&myMessageBox, (char*)lparam + sizeof(SOCKET), sizeof(MyMessageBox));
+	
+	if(myMessageBox.category == 2)
+		::MessageBox(NULL, myMessageBox.content, myMessageBox.title, MB_OK|MB_ICONERROR);
+	else
+		::MessageBox(NULL, myMessageBox.content, myMessageBox.title, MB_YESNO);
+    delete (char *)lparam;
 	return 0;
 }
 
