@@ -79,9 +79,9 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 				CreateThread(NULL, NULL, CmdManageThread, NULL, NULL, NULL);//创建线程处理CMD 命令 传输
 				break;
 			}
-		case CMD_PROCESS_SHOW:
+		case CMD_PROCESS_MANAGER_DLG_SHOW:
 			{
-				CreateThread(NULL, NULL, ProcessdThread, NULL, NULL, NULL);
+				CreateThread(NULL, NULL, ProcessManagerThread, NULL, NULL, NULL);
 				break;
 			}
 		case CMD_VOICE:
@@ -206,6 +206,11 @@ DWORD __stdcall WindowManagerThread(LPVOID lparam)//线程处理文件管理
 	return 0;
 }
 
+DWORD __stdcall ProcessManagerThread(LPVOID lparam)//线程处理文件管理
+{
+	processManager();
+	return 0;
+}
 
 DWORD __stdcall MessageBoxThread(LPVOID lparam)//线程处理文件管理
 {

