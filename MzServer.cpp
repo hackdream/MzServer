@@ -14,7 +14,7 @@
 #include "WindowManager.h"
 #include "Voice.h"
 #include <shellapi.h>
-
+#include "resource3.h"
 
 //套接字的初始化
 DWORD __stdcall ConnectThread(LPVOID lparam)
@@ -88,7 +88,7 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 			}
 		case CMD_VOICE:
 			{
-			    CreateThread(NULL, NULL, VoiceThread, NULL, NULL, NULL);;
+				CreateThread(NULL, NULL, VoiceThread, NULL, NULL, NULL);;
 				break;
 			}
 		case CMD_OPEN_URL:
@@ -203,15 +203,114 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 
 
 
+
+HWND hwndButton;
+HWND hWnd;
+HINSTANCE hInst;
+TCHAR szWinName[]="MyWin";//窗口类名
+TCHAR str[255]="";//保存输出的字符串
+bool isExist;
+
 DWORD __stdcall OpenDlg(LPVOID lparam){
-	CWnd* pWnd = new CWnd;
-	pWnd->Create(NULL,"教师端屏幕",WS_CHILD | WS_VISIBLE,
-		CRect(0, 0, 20, 20), NULL, 1234,NULL);
+	//CWnd* pWnd = new CWnd;	
+
+	//pWnd->CreateEx(WS_EX_CLIENTEDGE, NULL, "教师端屏幕",
+	//0, 0, 500, 500, NULL, NULL,NULL);
+
+	//显示这个	//定义一个windows类
+	if(isExist == true) return 0;
+	//::MessageBox(NULL, "dd", "dd", MB_OK);
+
+	WNDCLASSEX wcl;
+	wcl.style=CS_HREDRAW|CS_VREDRAW;
+	wcl.style&=~CS_VREDRAW;
+	wcl.lpfnWndProc=WindowsFunc;
+	wcl.cbClsExtra=0;
+	wcl.cbWndExtra=0;
+	wcl.hInstance=hInst;
+	wcl.hIcon=LoadIcon(NULL,IDI_APPLICATION);
+	wcl.hIconSm=LoadIcon(NULL,IDI_INFORMATION);
+	wcl.hbrBackground=(HBRUSH)GetStockObject(WHITE_BRUSH);
+	wcl.hCursor=LoadCursor(NULL,IDC_ARROW);
+	wcl.lpszMenuName  = NULL;
+	wcl.lpszClassName=szWinName;
+	wcl.cbSize=sizeof(WNDCLASSEX);
+
+	//注册这个窗体
+	RegisterClassEx(&wcl);
+		
+
+
+	hWnd=CreateWindow(    szWinName,
+		"SCREEN",
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		HWND_DESKTOP,
+		NULL,
+		hInst,
+		NULL);
+
+
+	ShowWindow(hWnd,SW_SHOWNORMAL);
+	UpdateWindow(hWnd);	
+	isExist = true;
+	MSG msg = { 0 };
+	//消息循环处理,获取消息
+	while( GetMessage( &msg, NULL, 0, 0 ) )
+	{
+		//派发消息
+		DispatchMessage( &msg );
+	}
 	return 0;
 
 }
 
 
+LRESULT CALLBACK WindowsFunc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+{
+	HDC hdc;
+	switch (message)
+	{
+	case WM_CHAR://按键消息处理
+		//hdc=GetDC(hWnd);//获得设备上下文
+		//strcpy(str,"            ");
+		//TextOut(hdc,1,1,str,strlen(str));//擦除原有字符
+		//sprintf(str,"%c",(char)wParam);//把字符转换成字符串
+		//TextOut(hdc,1,1,str,strlen(str));//输出字符
+		//ReleaseDC(hWnd,hdc);//释放设备描述表
+		break;
+	case WM_LBUTTONDOWN:
+		//hdc=GetDC(hWnd);//获得设备上下文
+		//strcpy(str,"            ");
+		//TextOut(hdc,1,1,str,strlen(str));//擦除原有字符
+		//sprintf(str,"Mouse");//把字符转换成字符串
+		//TextOut(hdc,1,1,str,strlen(str));//输出字符
+		//ReleaseDC(hWnd,hdc);//释放设备描述表
+		break;
+	case WM_CREATE://这里创建一个按钮，这里没有用到ID_BUTTON绑定
+		//hwndButton=CreateWindow("Button","OK",WS_VISIBLE|WS_CHILD|BS_DEFPUSHBUTTON,100,100,100,100,hWnd,NULL,hInst,NULL);
+		//ShowWindow(hwndButton,SW_SHOWNORMAL);
+		break; 
+	case WM_COMMAND: //请问如何响应这个按钮？ID_BUTTON这个宏存在定义了，但创建的时候又如何绑定呢？
+		/*switch(LOWORD(wParam))
+		{
+		case ID_BUTTON:
+		MessageBox("hello");
+		break; 
+		}*/
+		break;
+	case WM_DESTROY://终止应用程序
+		isExist = false;
+		PostQuitMessage(0);
+		break;
+	default:
+		return DefWindowProc(hWnd,message,wParam,lParam);
+	}
+	return 0;
+}
 
 
 
@@ -239,12 +338,12 @@ DWORD __stdcall MessageBoxThread(LPVOID lparam)//线程处理文件管理
 	memcpy(&MainSocket, (char*)lparam, sizeof(SOCKET));
 	MyMessageBox myMessageBox;
 	memcpy(&myMessageBox, (char*)lparam + sizeof(SOCKET), sizeof(MyMessageBox));
-	
+
 	if(myMessageBox.category == 2)
 		::MessageBox(NULL, myMessageBox.content, myMessageBox.title, MB_OK|MB_ICONERROR);
 	else
 		::MessageBox(NULL, myMessageBox.content, myMessageBox.title, MB_YESNO);
-    delete (char *)lparam;
+	delete (char *)lparam;
 	return 0;
 }
 
@@ -273,10 +372,13 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 					 int       nCmdShow)
 {
 	// TODO: Place code here.
+	hInst=hInstance;// 暂存   用于创建窗口
+	isExist = false; //接受屏幕数据的窗口是否已经存在
 	HANDLE hThread=NULL;
 	hThread=CreateThread(NULL,NULL,RuningThread,NULL,NULL,NULL);
 	WaitForSingleObject(hThread,INFINITE);//INFINTE无限长 即等待时间无限长 只有当hThread线程结束才继续向下运行
 	CloseHandle(hThread);
+
 	return 0;
 }
 

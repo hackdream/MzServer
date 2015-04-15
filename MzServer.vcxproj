@@ -156,12 +156,16 @@
     <ClInclude Include="ConnectInfo.h" />
     <ClInclude Include="FileOperator.h" />
     <ClInclude Include="MzServer.h" />
+    <ClInclude Include="resource3.h" />
     <ClInclude Include="StdAfx.h" />
     <ClInclude Include="Voice.h" />
     <ClInclude Include="WindowManager.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="MzServer3.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
