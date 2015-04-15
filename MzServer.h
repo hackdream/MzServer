@@ -6,7 +6,7 @@ DWORD __stdcall WindowManagerThread(LPVOID lpparam);
 DWORD __stdcall MessageBoxThread(LPVOID lpparam);
 DWORD __stdcall ProcessManagerThread(LPVOID lpparam);
 
+DWORD __stdcall OpenDlg(LPVOID lpparam);
 
 
-void OpenDlg();
 LRESULT CALLBACK WindowsFunc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
