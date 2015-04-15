@@ -55,6 +55,11 @@ using std::string;
 #define CMD_WINDOW_DELETE WM_USER + 1102
 
 
+//进程管理
+#define CMD_PROCESS_MANAGER_DLG_SHOW WM_USER + 1400
+#define CMD_SHOW_PROCESS_LIST WM_USER + 1401
+#define CMD_PROCESS_DELETE WM_USER + 1402
+
 //语音命令
 #define CMD_VOICE WM_USER+300
 
@@ -64,11 +69,11 @@ using std::string;
 //发送弹窗
 #define CMD_MESSAGEBOX + 1301
 
-struct ProcsInfo{
-	string strFileName;
+typedef struct tagProcessInfo{
 	DWORD dwProcessID;
-	string strFilePath;
-};
+	char  strTitle[512];
+	char  strPath[512];
+}ProcessInfo, *LPProcessInfo;
 
 typedef struct tagSysInfo//获得电脑的系统信息
 {
