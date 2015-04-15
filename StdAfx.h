@@ -12,11 +12,12 @@
 
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
-
+/*
 #ifndef WINDOWS_HEADER
 #define WINDOWS_HEADER
 #include "windows.h"
 #endif
+*/
 
 #include <winsock2.h>
 #pragma comment (lib,"ws2_32.lib")

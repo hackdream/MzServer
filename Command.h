@@ -69,6 +69,10 @@ using std::string;
 //发送弹窗
 #define CMD_MESSAGEBOX + 1301
 
+
+//   学生端打开screen窗口
+#define CMD_SHOW_RECV_SCREEN_DLG  WM_USER + 1500
+
 typedef struct tagProcessInfo{
 	DWORD dwProcessID;
 	char  strTitle[512];

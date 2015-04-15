@@ -1,7 +1,7 @@
 #include "Voice.h"
 #include "Command.h"
 #include <mmeapi.h>
-#include <Windows.h>
+//#include <Windows.h>
 #include <conio.h>
 #include <stdio.h>
 #include "ConnectInfo.h"

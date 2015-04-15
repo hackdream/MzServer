@@ -1,5 +1,5 @@
 #include "CmdManage.h"
-#include <Windows.h>
+//#include <Windows.h>
 #include "ConnectInfo.h"
 #include <string.h>
 
