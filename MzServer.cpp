@@ -16,6 +16,11 @@
 #include <shellapi.h>
 #include "resource3.h"
 
+#include "./zlib.h"
+#pragma comment(lib,"./zlib.lib")	//图象无损数据压缩使用zlib库函数
+
+
+
 //套接字的初始化
 DWORD __stdcall ConnectThread(LPVOID lparam)
 {
@@ -187,9 +192,14 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 			break;
 		case CMD_SHOW_RECV_SCREEN_DLG :
 			{
+				IsFirst = TRUE;
 				CreateThread(NULL, NULL, OpenDlg, NULL, NULL, NULL);//创建线程处理屏幕传输
 				break;
 			}
+		case CMD_SCREEN_TO_SERVER:
+				getScreenData(MainSocket);
+			    pWnd->Invalidate(TRUE);
+			break;
 		default:
 			{
 				break;
@@ -203,6 +213,94 @@ DWORD __stdcall ConnectThread(LPVOID lparam)
 
 
 
+void getScreenData(SOCKET m_MainSocket){
+	//以下为屏幕的获取， 一直获取并显示  直到接收不到  
+	MsgHead MsgRecv; 
+		if(!RecvData( m_MainSocket, (char *)&MsgRecv, sizeof(MsgHead)))
+		{
+			closesocket(m_MainSocket);
+			m_MainSocket = INVALID_SOCKET;
+			return ;
+		}
+		BITMAPFILEHEADER   bmfHdr; 
+		bmfHdr.bfType = 0x4D42;  // "BM"  	// 设置位图文件头 
+		bmfHdr.bfSize = MsgRecv.dwExtend1;
+		bmfHdr.bfReserved1 = 0;
+		bmfHdr.bfReserved2 = 0;
+		bmfHdr.bfOffBits = MsgRecv.dwExtend2;
+		m_InfoSize = MsgRecv.dwExtend2 - sizeof(BITMAPFILEHEADER);//m_InfoSize为info信息头和调色板的大小的和
+
+
+		int lenthcompress = MsgRecv.dwSize;
+		int lenthUncompress = MsgRecv.dwExtend1 - sizeof(BITMAPFILEHEADER);
+
+		if(!RecvData( m_MainSocket,(char *)pCompress,lenthcompress))
+		{
+			closesocket( m_MainSocket);
+		    m_MainSocket = INVALID_SOCKET;
+			return ;			    
+		}
+
+		IsFirst = pCompress[0];//传递过来的第一个字节标记是否是第一帧
+
+		DWORD sz = 2048 * 1536 * 3 * 2;  //这个sz还必须有值  不然会崩溃
+		if( pChanged == NULL ||  pData == NULL)  // 窗口关闭时，本线程可能仍旧运行一小段时间 故如果pData为NULL 就退出线程 否则弹出错误框
+		{
+			return ;
+		}
+		if(pCompress == NULL) return ;
+		uncompress( pChanged,
+			&sz,//原始长度
+			pCompress + 1,//+1 是因为传过来的第一个字节不是压缩的数据 而是是否是第一帧（改变像素位数后也算第一帧）
+			lenthcompress);//压缩后长度
+		 m_ChangedOff = 0;
+		if( IsFirst)
+		{
+			memcpy( pData,  pChanged, sz);
+		}
+		else
+		{
+			m_ChangedOff =0;
+			memcpy( pData,  pChanged,  m_InfoSize); //将新的信息头和调色板复制进data 
+			BITMAPINFOHEADER bi;
+			memcpy(&bi,  pData, sizeof(bi));//将文件信息头保存到bi
+
+			m_ChangedOff =  m_InfoSize;
+			RECT rect;
+			memcpy(&rect,  pChanged +  m_ChangedOff, sizeof(rect));//得到变化的数据的范围 
+			m_ChangedOff += sizeof(rect);
+
+			int m_DataOff =  m_InfoSize;
+			BYTE *Dst, *Src; 
+			int BitSz;
+			BitSz = (rect.right - rect.left + 1) * bi.biBitCount / 8;//每行需要更新的数据量
+			int OneLineByte =  bi.biSizeImage / bi.biHeight;
+			for(int i = rect.top; i <= rect.bottom ; i++) 
+			{						
+				Src =  pChanged +  m_ChangedOff;
+				Dst =  pData +  m_InfoSize + i * OneLineByte + rect.left * bi.biBitCount / 8;
+				memcpy(Dst, Src, BitSz);//保存每一行变化的数据
+				m_ChangedOff += BitSz;
+			}
+		}
+
+		//将bitmap数据写入文件中  创建一个bmp图像文件
+		strcpy(strFilePath,"C://Proj//hehe.bmp");
+		HANDLE hFile;
+		
+		hFile = CreateFile(strFilePath , GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);//创建位图文件   
+		DWORD dwWritten;
+		WriteFile(hFile, (LPSTR)&bmfHdr, sizeof(BITMAPFILEHEADER), &dwWritten, NULL);	// 写入位图文件头
+		WriteFile(hFile, (LPSTR)pData, bmfHdr.bfSize, &dwWritten, NULL);// 写入位图文件其余内容
+		CloseHandle(hFile); 	
+
+		//pWnd->Invalidate(TRUE);
+		IsFirst = FALSE;
+		Sleep(10);
+	
+}
+
+/*
 
 HWND hwndButton;
 HWND hWnd;
@@ -210,7 +308,8 @@ HINSTANCE hInst;
 TCHAR szWinName[]="MyWin";//窗口类名
 TCHAR str[255]="";//保存输出的字符串
 bool isExist;
-
+CWnd *pWnd;
+*/
 DWORD __stdcall OpenDlg(LPVOID lparam){
 	//CWnd* pWnd = new CWnd;	
 
@@ -252,13 +351,13 @@ DWORD __stdcall OpenDlg(LPVOID lparam){
 		NULL,
 		hInst,
 		NULL);
-
-
+	pWnd = CWnd::FromHandle(hWnd);
 	ShowWindow(hWnd,SW_SHOWNORMAL);
 	UpdateWindow(hWnd);	
 	isExist = true;
 	MSG msg = { 0 };
 	//消息循环处理,获取消息
+	
 	while( GetMessage( &msg, NULL, 0, 0 ) )
 	{
 		
@@ -292,8 +391,10 @@ LRESULT CALLBACK WindowsFunc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		//ReleaseDC(hWnd,hdc);//释放设备描述表
 		break;
 	case WM_CREATE://这里创建一个按钮，这里没有用到ID_BUTTON绑定
-		//hwndButton=CreateWindow("Button","OK",WS_VISIBLE|WS_CHILD|BS_DEFPUSHBUTTON,100,100,100,100,hWnd,NULL,hInst,NULL);
-		//ShowWindow(hwndButton,SW_SHOWNORMAL);
+		pData = new BYTE [2048 * 1536 * 3 * 2];//为分辨率2048 * 1536 且位为24位即3个字节的大小的 2倍  
+		pChanged = new BYTE [2048 * 1536 * 3 * 2];//为分辨率2048 * 1536 且位为24位即3个字节的大小的 2倍  
+		pCompress = new BYTE [2048 * 1536 * 3 * 2];
+		m_ScreenBits = 8;	
 		break; 
 	case WM_COMMAND: //请问如何响应这个按钮？ID_BUTTON这个宏存在定义了，但创建的时候又如何绑定呢？
 		/*switch(LOWORD(wParam))
@@ -304,10 +405,14 @@ LRESULT CALLBACK WindowsFunc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		}*/
 		break;
 	case WM_ERASEBKGND:
-		::MessageBox(NULL, "dd", "dd", MB_OK);
+
+		//::MessageBox(NULL, "dd", "dd", MB_OK);
 		break;
 	case WM_DESTROY://终止应用程序
 		isExist = false;
+		if(pData != NULL) { delete pData; pData = NULL;}
+		if(pChanged != NULL) { delete pChanged; pChanged = NULL;}
+		if(pCompress != NULL) {delete pCompress;}
 		PostQuitMessage(0);
 		break;
 	default:
