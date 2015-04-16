@@ -261,6 +261,7 @@ DWORD __stdcall OpenDlg(LPVOID lparam){
 	//消息循环处理,获取消息
 	while( GetMessage( &msg, NULL, 0, 0 ) )
 	{
+		
 		//派发消息
 		DispatchMessage( &msg );
 	}
@@ -301,6 +302,9 @@ LRESULT CALLBACK WindowsFunc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 		MessageBox("hello");
 		break; 
 		}*/
+		break;
+	case WM_ERASEBKGND:
+		::MessageBox(NULL, "dd", "dd", MB_OK);
 		break;
 	case WM_DESTROY://终止应用程序
 		isExist = false;
